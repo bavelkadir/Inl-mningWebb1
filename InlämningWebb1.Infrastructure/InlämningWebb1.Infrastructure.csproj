@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <!-- Infrastructure depends on Application so it can implement Application's interfaces -->
+  <ItemGroup>
+    <ProjectReference Include="..\InlämningWebb1.Application\InlämningWebb1.Application.csproj" />
+  </ItemGroup>
+
+</Project>

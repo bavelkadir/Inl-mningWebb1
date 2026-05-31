@@ -1,1 +1,6 @@
-<Solution />
+<Solution>
+  <Project Path="InlämningWebb1.API/InlämningWebb1.API.csproj" />
+  <Project Path="InlämningWebb1.Application/InlämningWebb1.Application.csproj" />
+  <Project Path="InlämningWebb1.Domain/InlämningWebb1.Domain.csproj" />
+  <Project Path="InlämningWebb1.Infrastructure/InlämningWebb1.Infrastructure.csproj" />
+</Solution>
