@@ -6,6 +6,10 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.8" />
+  </ItemGroup>
+
   <!-- Application depends on Domain only (Clean Architecture: inward only) -->
   <ItemGroup>
     <ProjectReference Include="..\InlämningWebb1.Domain\InlämningWebb1.Domain.csproj" />
