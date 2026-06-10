@@ -1,11 +1,11 @@
-using InlämningWebb1.Domain.Entities;
+using InlämningWebb1.Application.Features.Products.DTOs;
 using MediatR;
 
 namespace InlämningWebb1.Application.Features.Products.Queries.GetProductById;
 
 /// <summary>
-/// Query to retrieve a single product by its unique ID.
-/// Returns null if no product with the given ID exists — the controller then returns 404.
+/// Query to retrieve a single product by ID.
+/// Returns null if not found — the controller translates null to 404 NotFound.
 /// </summary>
 /// <param name="Id">The unique identifier of the product to retrieve.</param>
-public record GetProductByIdQuery(Guid Id) : IRequest<Product?>;
+public record GetProductByIdQuery(Guid Id) : IRequest<ProductDto?>;

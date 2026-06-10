@@ -1,4 +1,5 @@
-using InlämningWebb1.Domain.Entities;
+using AutoMapper;
+using InlämningWebb1.Application.Features.Products.DTOs;
 using InlämningWebb1.Domain.Interfaces;
 using MediatR;
 
@@ -6,28 +7,29 @@ namespace InlämningWebb1.Application.Features.Products.Queries.GetAllProducts;
 
 /// <summary>
 /// Handler for GetAllProductsQuery.
-/// MediatR finds this class automatically because it implements
-/// IRequestHandler&lt;GetAllProductsQuery, IEnumerable&lt;Product&gt;&gt;.
+/// Fetches domain entities from the repository, then maps them to DTOs
+/// before returning — the API layer sees only ProductDto objects.
 /// </summary>
-public class GetAllProductsHandler : IRequestHandler<GetAllProductsQuery, IEnumerable<Product>>
+public class GetAllProductsHandler : IRequestHandler<GetAllProductsQuery, IEnumerable<ProductDto>>
 {
     private readonly IProductRepository _productRepository;
+    private readonly IMapper _mapper;
 
-    /// <summary>IProductRepository is injected by the DI container automatically.</summary>
-    public GetAllProductsHandler(IProductRepository productRepository)
+    public GetAllProductsHandler(IProductRepository productRepository, IMapper mapper)
     {
         _productRepository = productRepository;
+        _mapper = mapper;
     }
 
-    /// <summary>
-    /// Executes the query. Called by MediatR when a GetAllProductsQuery is sent.
-    /// </summary>
-    /// <param name="request">The query object (no data needed here).</param>
-    /// <param name="cancellationToken">Lets the caller cancel a long-running DB call.</param>
-    public async Task<IEnumerable<Product>> Handle(
+    /// <summary>Loads all products and maps them to the DTO shape.</summary>
+    public async Task<IEnumerable<ProductDto>> Handle(
         GetAllProductsQuery request,
         CancellationToken cancellationToken)
     {
-        return await _productRepository.GetAllAsync(cancellationToken);
+        var products = await _productRepository.GetAllAsync(cancellationToken);
+
+        // AutoMapper uses the CreateMap<Product, ProductDto>() rule from ProductMappingProfile
+        // to transform every item in the collection automatically.
+        return _mapper.Map<IEnumerable<ProductDto>>(products);
     }
 }
