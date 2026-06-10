@@ -1,3 +1,5 @@
+using AutoMapper;
+using InlämningWebb1.Application.Features.Products.DTOs;
 using InlämningWebb1.Domain.Entities;
 using InlämningWebb1.Domain.Interfaces;
 using MediatR;
@@ -6,24 +8,25 @@ namespace InlämningWebb1.Application.Features.Products.Commands.CreateProduct;
 
 /// <summary>
 /// Handler for CreateProductCommand.
-/// Builds the Product entity from command data, persists it, and returns it to the caller.
+/// Builds the domain entity, persists it, then maps it to a ProductDto for the response.
 /// </summary>
-public class CreateProductHandler : IRequestHandler<CreateProductCommand, Product>
+public class CreateProductHandler : IRequestHandler<CreateProductCommand, ProductDto>
 {
     private readonly IProductRepository _productRepository;
+    private readonly IMapper _mapper;
 
-    public CreateProductHandler(IProductRepository productRepository)
+    public CreateProductHandler(IProductRepository productRepository, IMapper mapper)
     {
         _productRepository = productRepository;
+        _mapper = mapper;
     }
 
-    /// <summary>Creates a new Product, saves it to the database, and returns the saved entity.</summary>
-    public async Task<Product> Handle(
+    /// <summary>Creates the product entity, saves it, and returns the DTO.</summary>
+    public async Task<ProductDto> Handle(
         CreateProductCommand request,
         CancellationToken cancellationToken)
     {
-        // Build the domain entity from the incoming command data.
-        // The ID is generated here — the client never decides the ID.
+        // Build the domain entity. The ID is generated here — the client never decides this.
         var product = new Product
         {
             Id = Guid.NewGuid(),
@@ -32,10 +35,9 @@ public class CreateProductHandler : IRequestHandler<CreateProductCommand, Produc
             CategoryId = request.CategoryId
         };
 
-        // Persist via the repository — SaveChangesAsync runs inside AddAsync
         await _productRepository.AddAsync(product, cancellationToken);
 
-        // Return the saved entity so the controller can include it in the 201 Created response
-        return product;
+        // Map the saved entity to a DTO — the controller only sees ProductDto
+        return _mapper.Map<ProductDto>(product);
     }
 }
