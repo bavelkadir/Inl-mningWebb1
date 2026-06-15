@@ -5,16 +5,9 @@ namespace InlämningWebb1.Infrastructure.Services;
 
 /// <summary>
 /// Simple in-memory user store for this school assignment.
-///
-/// IMPORTANT — this is intentionally simplified:
-///   - Users are hardcoded (no database table).
-///   - Passwords are stored as plaintext (never do this in production).
-///   - In a real application: store users in the database, hash passwords
-///     with bcrypt or Argon2, and use a proper user management solution.
-///
-/// Two accounts are pre-configured:
-///   admin / Admin123!  → Role: Admin  (can read AND write products)
-///   user  / User123!   → Role: User   (can only read products)
+/// Passwords are stored as plaintext — acceptable here for simplicity.
+/// In production: store users in a database with hashed passwords (bcrypt / Argon2).
+/// Test credentials are documented in README.md.
 /// </summary>
 public class UserService : IUserService
 {
