@@ -1,30 +1,62 @@
+using System.Text;
 using FluentValidation;
 using InlämningWebb1.Application;
 using InlämningWebb1.Infrastructure;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Register MVC controllers — enables [ApiController] classes and attribute routing.
-// ReferenceHandler.IgnoreCycles is no longer needed now that handlers return DTOs,
-// which have no circular navigation properties.
+// ─── Controllers ────────────────────────────────────────────────────────────
 builder.Services.AddControllers();
 
-// OpenAPI spec generation — produces /openapi/v1.json (consumed by Scalar UI below)
+// ─── OpenAPI / Scalar ───────────────────────────────────────────────────────
 builder.Services.AddOpenApi();
 
-// Application layer: MediatR handlers + ValidationBehavior + AutoMapper + FluentValidation validators
-builder.Services.AddApplication();
+// ─── JWT Authentication ──────────────────────────────────────────────────────
+// This middleware validates the Bearer token on every incoming request.
+// It reads the signing key from configuration — in development this merges
+// appsettings.json (Issuer, Audience) with User Secrets (Key).
+builder.Services.AddAuthentication(options =>
+{
+    // Set JWT Bearer as the default scheme for both authentication and challenge
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme    = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer           = true,
+        ValidateAudience         = true,
+        ValidateLifetime         = true,   // rejects expired tokens
+        ValidateIssuerSigningKey = true,   // verifies the signature with our secret key
 
-// Infrastructure layer: EF Core DbContext + repositories
+        ValidIssuer   = builder.Configuration["Jwt:Issuer"],
+        ValidAudience = builder.Configuration["Jwt:Audience"],
+
+        // The signing key — loaded from User Secrets in dev, environment variable in prod.
+        // Never read from appsettings.json directly.
+        IssuerSigningKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+    };
+});
+
+// Required alongside AddAuthentication — enables [Authorize] attribute evaluation
+builder.Services.AddAuthorization();
+
+// ─── Application + Infrastructure ───────────────────────────────────────────
+builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
+// ═══════════════════════════════════════════════════════════════════════════
 var app = builder.Build();
+// ═══════════════════════════════════════════════════════════════════════════
 
-// Global exception handler — must be first so it catches exceptions from all middleware after it.
-// Translates FluentValidation.ValidationException → 400 Bad Request with structured error list.
-// All other unhandled exceptions → 500 Internal Server Error.
+// Global exception handler — catches ValidationException → 400, everything else → 500.
+// Must be first in the pipeline so it wraps all subsequent middleware.
 app.UseExceptionHandler(exceptionHandlerApp =>
 {
     exceptionHandlerApp.Run(async context =>
@@ -33,8 +65,7 @@ app.UseExceptionHandler(exceptionHandlerApp =>
 
         if (feature?.Error is ValidationException validationException)
         {
-            // Return all validation failures as a structured JSON list
-            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            context.Response.StatusCode  = StatusCodes.Status400BadRequest;
             context.Response.ContentType = "application/json";
 
             var errors = validationException.Errors
@@ -51,11 +82,19 @@ app.UseExceptionHandler(exceptionHandlerApp =>
 
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();              // Raw spec at /openapi/v1.json
-    app.MapScalarApiReference();   // Interactive UI at /scalar/v1
+    app.MapOpenApi();
+    app.MapScalarApiReference();
 }
 
 app.UseHttpsRedirection();
+
+// ─── Authentication & Authorization middleware ───────────────────────────────
+// ORDER MATTERS: Authentication must come before Authorization.
+// UseAuthentication reads the token and populates HttpContext.User.
+// UseAuthorization then checks the [Authorize] attributes against HttpContext.User.
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.MapControllers();
 
 app.Run();
