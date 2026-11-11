@@ -95,6 +95,6 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapController();
+app.MapControllers();
 
 app.Run();
