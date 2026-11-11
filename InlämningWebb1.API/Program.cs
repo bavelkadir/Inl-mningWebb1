@@ -85,7 +85,7 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
     app.MapScalarApiReference();
 }
-
+// hej
 app.UseHttpsRedirection();
 
 // ─── Authentication & Authorization middleware ───────────────────────────────
